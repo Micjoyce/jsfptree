@@ -31,12 +31,43 @@ module.exports = {
     }
     return arrayOfRows;
   },
+  hasItem(fOneItems, item){
+    var flag = false;
+    for (var i = 0; i < fOneItems.length; i++) {
+      var itemObj = fOneItems[i];
+      if (itemObj.item === 'item') {
+        flag = true;
+        break;
+      }
+    }
+    return flag;
+  },
+  addItemFreq(fOneItems, item) {
+    var hasFind = false;
+    for (var i = 0; i < fOneItems.length; i++) {
+      var itemObj = fOneItems[i];
+      if (itemObj.item === item) {
+        hasFind = true;
+        itemObj.freq += 1;
+        break;
+      }
+    }
+    // 未找到
+    if (hasFind === false) {
+      fOneItems.push({
+        item: item,
+        freq: 1,
+      })
+    }
+    return fOneItems;
+  },
   // 找出频繁一项集合
   buildFOneItems(transactions, minSupport) {
     if (!Array.isArray(transactions)) {
       return console.log(`buildFOneItems Error, transactions: ${transactions}`);
     }
-    var fOneItems = {};
+    var self = this;
+    var fOneItems = [];
     transactions.forEach(function(row, rowIndex) {
       if (!Array.isArray(row)) {
         console.log(`buildFOneItems row Error,row: ${row},transactions: ${transactions}, `);
@@ -48,14 +79,53 @@ module.exports = {
         if (rowItems.indexOf(item) === -1) {
           rowItems.push(item);
           // 累加支持度
-          if (!fOneItems[item.toString()]) {
-            fOneItems[item.toString()] = 1;
-          } else {
-            fOneItems[item.toString()] += 1;
-          }
+          self.addItemFreq(fOneItems, item);
         }
       });
     });
-    return fOneItems;
+    var rowLength = transactions.length;
+    // 删除小于支持度的项集
+    if (!Array.isArray(fOneItems)) {
+      return console.log(`buildFOneItems fOneItems Error,fOneItems: ${fOneItems}`);
+    }
+    var resultOneItems = [];
+    fOneItems.forEach(function(oneItem, index) {
+      var freqPercentage = oneItem.freq/rowLength;
+      if (freqPercentage >= minSupport) {
+        resultOneItems.push({
+          item: oneItem.item,
+          freq: oneItem.freq,
+        });
+      }
+    });
+    /*
+    [ { item: '2', freq: 7 },
+      { item: '1', freq: 6 },
+      { item: '3', freq: 6 },
+      { item: '4', freq: 2 },
+      { item: '5', freq: 2 } ]
+    */
+    // 由支持度高到低排序返回
+    resultOneItems.sort(function(a, b){
+      return a.freq < b.freq;
+    });
+    return resultOneItems;
+  },
+  filterTransacrions(transactions, fOneItems) {
+    var items = _.map(fOneItems, 'item');
+    var newTransactions = [];
+    transactions.forEach(function(row, rowIndex){
+      var newRow = [];
+      items.forEach(function(item, index) {
+        // 如果频繁项集在此行中出现则将其push到新的数组中
+        if (row.indexOf(item) !== -1) {
+          newRow.push(item);
+        }
+      });
+      if (newRow.length > 0) {
+        newTransactions.push(newRow);
+      }
+    });
+    return newTransactions;
   }
 }
