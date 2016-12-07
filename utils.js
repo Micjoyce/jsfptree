@@ -1,5 +1,6 @@
 var fs = require('fs');
 var _ = require('lodash');
+var FpNode = require('./FpNode');
 
 module.exports = {
   readCsvToArray(fileName, callback) {
@@ -75,7 +76,7 @@ module.exports = {
       var rowItems = [];
       row.forEach(function(item, itemIndex) {
         // 判断此项是否已经存在，如果存在则不进行计算
-        // 为计算过的才进行累加计算
+        // 未计算过的才进行累加计算
         if (rowItems.indexOf(item) === -1) {
           rowItems.push(item);
           // 累加支持度
@@ -105,12 +106,23 @@ module.exports = {
       { item: '4', freq: 2 },
       { item: '5', freq: 2 } ]
     */
-    // 由支持度高到低排序返回
+    // 由支持度高到低排序返回／
     resultOneItems.sort(function(a, b){
       return a.freq < b.freq;
     });
     return resultOneItems;
   },
+  /*
+    [ [ '2', '1' ],
+    [ '2' ],
+    [ '2', '3' ],
+    [ '2', '1' ],
+    [ '1', '3' ],
+    [ '2', '3' ],
+    [ '1', '3' ],
+    [ '2', '1', '3' ],
+    [ '2', '1', '3' ] ]
+  */
   filterTransacrions(transactions, fOneItems) {
     var items = _.map(fOneItems, 'item');
     var newTransactions = [];
@@ -127,5 +139,26 @@ module.exports = {
       }
     });
     return newTransactions;
-  }
+  },
+  buildFpTree(newTransactions) {
+    if (!Array.isArray(newTransactions) || newTransactions.length === 0) {
+      return false;
+    }
+    // fptree的结构应该为大的数组结构[[],[FpNode],[FpNode, FpNode],[FpNode, FpNode]]
+    var fptree = [new FpNode({name: 'root'})];
+    newTransactions.forEach(function(transaction, rowIndex){
+      // var parent = new 
+      // 遍历每一行生成fptree
+      transaction.forEach(function(item, itemIndex){
+        var node = new FpNode({name: item, count: 1});
+        // 判断是否在存在，如果存在递增count
+
+        // 设置parent
+
+        
+      });
+      // console.log(node.getName());
+    });
+  },
+
 }
