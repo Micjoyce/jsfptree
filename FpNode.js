@@ -62,17 +62,16 @@ class FpNode {
 		}
 		this.children.push(child);
 	}
-    
     /**
      * 查找一个子节点
      * @param name
-     * @return 
+     * @return
      * @author hk
      */
 
 	findChild(name) {
 		let children = this.getChildren();
-		if (Array.isArray(children) || children.length > 0) {
+		if (Array.isArray(children) && children.length > 0) {
 			for (var i = 0; i < children.length; i++) {
 				let child = children[i];
 				if (name === child.getName()) {
@@ -84,7 +83,7 @@ class FpNode {
 	}
 	/**
      * 打印节点
-     * 
+     *
      * @author hk
      */
     printChildrenName() {
