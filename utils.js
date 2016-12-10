@@ -140,6 +140,24 @@ module.exports = {
     });
     return newTransactions;
   },
+  findChild(children, name, parentName) {
+    if (Array.isArray(children) && children.length > 0) {
+      for (var i = 0; i < children.length; i++) {
+        let child = children[i];
+        // 必须保证找不到父节点
+        // console.log(parentName, child.getParent());
+        if (name === child.getName()) {
+          if (!parentName) {
+            return child;
+          }
+          if (parentName === child.parent) {
+            return child;
+          }
+        }
+      }
+    }
+    return null;
+  },
   buildFpTree(newTransactions) {
     if (!Array.isArray(newTransactions) || newTransactions.length === 0) {
       return false;
@@ -147,55 +165,60 @@ module.exports = {
     /*
     fptree的结构应该为大的数组结构[[],[FpNode],[FpNode, FpNode],[FpNode, FpNode]]
      */
-    let root = new FpNode({name: 'root'});
+    const self = this;
+    let root = [];
     newTransactions.forEach(function(transaction, rowIndex){
       // 每一行的parent节点都是root
-      let parent = root;
       // 遍历每一行生成fptree
       transaction.forEach(function(item, itemIndex){
         // 判断是否在存在，如果存在递增count
-        let child = parent.findChild(item);
+        let parentName = transaction[itemIndex - 1];
+        let children = root[itemIndex] || [];
+        let child = self.findChild(children, item, parentName);
+        // 找到的话则递增
         if(child){
-          // 找到的话则递增
           child.countIncrement(1);
         } else {
           // 如果子节点中不存在的话则new一个子节点存放进去
           child = new FpNode({name: item, count: 1});
-          parent.addChild(child);
+          // 设置child的父节点。
+          child.setParent(parentName);
+          children.push(child);
         }
-        // 设置parent
-        parent = child;
+        root[itemIndex] = children;
       });
     });
     return root;
   },
   /*
   fpTree:
-  {
-      "name": "root",
-      "children": [{
+  [
+      [{
           "name": "2",
-          "count": 7,
-          "children": [{
-              "name": "1",
-              "count": 4,
-              "children": [{
-                  "name": "3",
-                  "count": 2
-              }]
-          }, {
-              "name": "3",
-              "count": 2
-          }]
+          "count": 7
       }, {
           "name": "1",
+          "count": 2
+      }],
+      [{
+          "name": "1",
+          "count": 4,
+          "parent": "2"
+      }, {
+          "name": "3",
           "count": 2,
-          "children": [{
-              "name": "3",
-              "count": 2
-          }]
+          "parent": "2"
+      }, {
+          "name": "3",
+          "count": 2,
+          "parent": "1"
+      }],
+      [{
+          "name": "3",
+          "count": 2,
+          "parent": "1"
       }]
-  }
+  ]
   fOneItem: { item: '3', freq: 6 },
   return: [
   [ '2', '3' ],
@@ -208,32 +231,18 @@ module.exports = {
   findSubTransFromTree(fpTree, fOneItem) {
     let self = this;
     let item = fOneItem.item;
-    let children = fpTree.getChildren();
     let prePath = [];
-    while (children) {
-      for (let i = 0; i < children.length; i++) {
-        let child = children[i];
-        let childName = child.getName();
-        // 如果此节点的名称找到了则不进行递归，添加此节点
-        if (childName === item) {
-          prePath.push(childName)
-          // 如果找到此节点则找到其路径
-        } else {
-          prePath.push(child.getName())
-          self.findSubTransFromTree(child, fOneItem);
-          children = child;
-        }
-      }
-    }
-    return prePath;
+    fpTree.forEach(function(row, item) {
+      
+    });
   },
-  buildPath(child) {
-    let parent = child.getParent();
-    let path = [child.getName()];
-    while (parent && parent.getName() !== 'root') {
-      path.unshift(parent.getName());
-      parent = parent.getParent();
-    }
-    return path;
-  }
+  // buildPath(child) {
+  //   let parent = child.getParent();
+  //   let path = [child.getName()];
+  //   while (parent && parent.getName() !== 'root') {
+  //     path.unshift(parent.getName());
+  //     parent = parent.getParent();
+  //   }
+  //   return path;
+  // }
 }

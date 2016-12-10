@@ -1,3 +1,3 @@
 module.exports = {
-    minSupport: 0.2,
+    minSupport: 0.4,
 };
