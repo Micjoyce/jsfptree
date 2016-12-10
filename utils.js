@@ -228,21 +228,101 @@ module.exports = {
   [ '2', '1', '3' ],
   [ '2', '1', '3' ] ]
   */
+ // 从尾部开始遍历查找出所有路径
+ /*
+ findNodes: [
+  {
+    route: [],
+    parentNode,
+    count: 1, // 第一次找到的时候更新，其他不做更新。
+  }
+ ]
+
+ return :
+ [ { route: [ '2', '1', '3' ], parentNode: '2', count: 2 },
+  { route: [ '2', '3' ], parentNode: '2', count: 2 },
+  { route: [ '1', '3' ], parentNode: '1', count: 2 } ]
+ */
   findSubTransFromTree(fpTree, fOneItem) {
     let self = this;
     let item = fOneItem.item;
-    let prePath = [];
-    fpTree.forEach(function(row, item) {
-      
-    });
+    let findNodes = [];
+    for (var i = fpTree.length - 1; i > 0; i--) {
+      let rowNodes = fpTree[i];
+      for (var j = 0; j < rowNodes.length; j++) {
+        var tNode = rowNodes[j];
+        // 根据findNodes中的数据查找本行更新其parentNode
+        // 遍历findNodes进行更新
+        findNodes.forEach(function(fNode, index) {
+          // 如果父节点的名称一样，则更新此节点, parentNode等价于route[0];
+          if (fNode.parentNode === tNode.name) {
+            // 更新route，从头部插入数据
+            fNode.route.unshift(tNode.parent);
+            fNode.parentNode = tNode.parent;
+          }
+        });
+        // 如果本行有出现item节点则在findNodes中添加新的数组
+        if (tNode.name === item) {
+          findNodes.push({
+            route: [tNode.parent, tNode.name],
+            parentNode: tNode.parent,
+            count: tNode.count,
+          });
+        }
+      }
+    }
+    return findNodes;
   },
-  // buildPath(child) {
-  //   let parent = child.getParent();
-  //   let path = [child.getName()];
-  //   while (parent && parent.getName() !== 'root') {
-  //     path.unshift(parent.getName());
-  //     parent = parent.getParent();
-  //   }
-  //   return path;
-  // }
+  /*
+  [ { route: [ '2', '1', '3' ], parentNode: '2', count: 2 },
+   { route: [ '2', '3' ], parentNode: '2', count: 2 },
+   { route: [ '1', '3' ], parentNode: '1', count: 2 } ]
+   */
+   /*
+   return:
+   {
+    transactions: [
+    [ '2', '1', '3' ],
+    [ '2', '3' ],
+    [ '1', '3' ]
+    ]
+   }
+    */
+  buildTransactios(findNodes) {
+    let transactions = [];
+    findNodes.forEach(function(fNode, index){
+      for (var i = 0; i < fNode.count.length; i++) {
+        transactions.push(fNode.route);
+      }
+    })
+    return transactions;
+  },
+  findFreqItems(fpTree, fOneItems) {
+    const self = this;
+    // 遍历表头找出各项集合, 此处需要做递归处理，如果找到subTrans存在的话，继续递归
+    let fItems = fOneItems.pop();
+    while (fItems) {
+      // 让每一项的频繁项集从fpTree中递归找出以其作为尾项的频繁项集
+      var findNodes = this.findSubTransFromTree(fpTree, fItems);
+      // [ { route: [ '2', '1', '3' ], parentNode: '2', count: 2 },
+      //  { route: [ '2', '3' ], parentNode: '2', count: 2 },
+      //  { route: [ '1', '3' ], parentNode: '1', count: 2 } ]
+      while ( findNodes && findNodes.length > 0) {
+        // 对subsTrans做数据处理，提取出路径，合成频繁项集，并且带有count
+        // 生成内嵌的subTransactions
+        var subTransactions = this.buildTransactios(findNodes);
+        // 生成频繁一项集
+        var subFOneItem = this.buildFOneItems(subTransactions, cfg.minSupport);
+        // 生成newTranstion
+        var subNewTransaction = this.filterTransacrions(subTransactions, subFOneItem);
+        // 生成子fpTree
+        var subFptree = this.buildFpTree(subNewTransaction);
+        // 找出subsTrans
+        var findNodes = this.findSubTransFromTree(fpTree, fOneItems[fOneItems.length - 1]);
+        console.log("---------------message-------------");
+
+        console.log(findNodes);
+      }
+    }
+  }
 }
